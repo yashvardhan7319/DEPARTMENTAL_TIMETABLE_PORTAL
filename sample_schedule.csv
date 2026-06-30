@@ -1,0 +1,31 @@
+program,day,timeSlot,subject,facultyId,facultyName,room
+BCA,Monday,09:00-10:00,Mathematics,BCA-FAC001,Dr. A. Sharma,Room 101
+BCA,Monday,10:00-11:00,Programming in C,BCA-FAC001,Dr. A. Sharma,Lab 1
+BCA,Monday,11:00-12:00,Digital Electronics,BCA-FAC001,Dr. A. Sharma,Room 102
+BCA,Tuesday,09:00-10:00,Data Structures,BCA-FAC001,Dr. A. Sharma,Room 101
+BCA,Tuesday,10:00-11:00,Computer Networks,BCA-FAC001,Dr. A. Sharma,Room 103
+BCA,Tuesday,11:00-12:00,Mathematics,BCA-FAC001,Dr. A. Sharma,Room 101
+BCA,Wednesday,09:00-10:00,Programming in C,BCA-FAC001,Dr. A. Sharma,Lab 1
+BCA,Wednesday,10:00-11:00,Digital Electronics,BCA-FAC001,Dr. A. Sharma,Room 102
+BCA,Wednesday,02:00-03:00,Data Structures,BCA-FAC001,Dr. A. Sharma,Room 101
+BCA,Thursday,09:00-10:00,Computer Networks,BCA-FAC001,Dr. A. Sharma,Room 103
+BCA,Thursday,10:00-11:00,Mathematics,BCA-FAC001,Dr. A. Sharma,Room 101
+BCA,Thursday,11:00-12:00,Programming in C,BCA-FAC001,Dr. A. Sharma,Lab 1
+BCA,Friday,09:00-10:00,Digital Electronics,BCA-FAC001,Dr. A. Sharma,Room 102
+BCA,Friday,10:00-11:00,Data Structures,BCA-FAC001,Dr. A. Sharma,Room 101
+BCA,Friday,11:00-12:00,Computer Networks,BCA-FAC001,Dr. A. Sharma,Room 103
+MCA,Monday,09:00-10:00,Algorithms,MCA-FAC002,Prof. B. Mehta,Room 201
+MCA,Monday,10:00-11:00,Database Systems,MCA-FAC002,Prof. B. Mehta,Lab 2
+MCA,Monday,11:00-12:00,Software Engineering,MCA-FAC002,Prof. B. Mehta,Room 202
+MCA,Tuesday,09:00-10:00,Machine Learning,MCA-FAC002,Prof. B. Mehta,Room 203
+MCA,Tuesday,10:00-11:00,Algorithms,MCA-FAC002,Prof. B. Mehta,Room 201
+MCA,Tuesday,11:00-12:00,Database Systems,MCA-FAC002,Prof. B. Mehta,Lab 2
+MCA,Wednesday,09:00-10:00,Software Engineering,MCA-FAC002,Prof. B. Mehta,Room 202
+MCA,Wednesday,10:00-11:00,Machine Learning,MCA-FAC002,Prof. B. Mehta,Room 203
+MCA,Wednesday,02:00-03:00,Algorithms,MCA-FAC002,Prof. B. Mehta,Room 201
+MCA,Thursday,09:00-10:00,Database Systems,MCA-FAC002,Prof. B. Mehta,Lab 2
+MCA,Thursday,10:00-11:00,Software Engineering,MCA-FAC002,Prof. B. Mehta,Room 202
+MCA,Thursday,11:00-12:00,Machine Learning,MCA-FAC002,Prof. B. Mehta,Room 203
+MCA,Friday,09:00-10:00,Algorithms,MCA-FAC002,Prof. B. Mehta,Room 201
+MCA,Friday,10:00-11:00,Database Systems,MCA-FAC002,Prof. B. Mehta,Lab 2
+MCA,Friday,11:00-12:00,Software Engineering,MCA-FAC002,Prof. B. Mehta,Room 202

@@ -1,0 +1,17 @@
+#!/bin/bash
+echo "🎓 Starting DPT Portal..."
+echo ""
+docker-compose up --build -d
+echo ""
+echo "✅ DPT Portal is starting up!"
+echo "   Frontend:  http://localhost"
+echo "   Backend:   http://localhost:8080"
+echo "   MySQL:     localhost:3306"
+echo ""
+echo "⏳ Backend may take 60-90 seconds on first run (DB init)."
+echo "   Run 'docker-compose logs -f backend' to watch startup."
+echo ""
+echo "🔑 Login credentials:"
+echo "   Admin:   admin / admin123"
+echo "   Faculty: CA-FAC001 / 12345"
+echo "   Student: 202300001 / 123"

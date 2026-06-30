@@ -1,0 +1,79 @@
+version: '3.9'
+
+services:
+
+  # ── MySQL 8 Database ──────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: dpt-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: dptroot2026
+      MYSQL_DATABASE:      timetable_db
+      MYSQL_USER:          dptuser
+      MYSQL_PASSWORD:      dptpass2026
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost",
+             "-u", "root", "-pdptroot2026"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - dpt-net
+    # Expose on host for tools like MySQL Workbench (optional)
+    ports:
+      - "3307:3306"
+
+  # ── Spring Boot Backend ───────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: dpt-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_URL:      "jdbc:mysql://mysql:3306/timetable_db?createDatabaseIfNotExist=true&useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+      DB_USER:     dptuser
+      DB_PASS:     dptpass2026
+      JWT_SECRET:  "DPTPortalSMITSecretKey2026SuperSecureLongKeyHMACSHA256xxx"
+      CORS_ORIGINS: "http://localhost,http://localhost:80,http://127.0.0.1"
+    networks:
+      - dpt-net
+    # Exposed on host for local API testing
+    ports:
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL",
+             "wget -qO- http://localhost:8080/api/auth/ping || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+
+  # ── React Frontend (Nginx) ────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: dpt-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - dpt-net
+
+volumes:
+  mysql_data:
+    driver: local
+
+networks:
+  dpt-net:
+    driver: bridge

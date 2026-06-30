@@ -1,0 +1,78 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'Inter', system-ui, sans-serif; background: #f4f4f4; color: #1e293b; }
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-dark text-white font-semibold px-5 py-2 rounded
+           transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed
+           flex items-center gap-2 justify-center text-sm;
+  }
+  .btn-secondary {
+    @apply bg-white hover:bg-gray-50 text-gray-700 font-semibold px-5 py-2 rounded
+           border border-gray-300 transition-all duration-200 flex items-center gap-2 justify-center text-sm;
+  }
+  .btn-outline-orange {
+    @apply bg-transparent hover:bg-primary text-primary hover:text-white font-semibold px-5 py-2 rounded
+           border border-primary transition-all duration-200 flex items-center gap-2 justify-center text-sm;
+  }
+  .btn-danger {
+    @apply bg-red-500 hover:bg-red-600 text-white font-semibold px-3 py-1 rounded
+           transition-all duration-200 text-xs;
+  }
+  .card {
+    @apply bg-white rounded shadow-sm border border-gray-200 p-5;
+  }
+  .input-field {
+    @apply w-full px-3 py-2.5 rounded border border-gray-300 bg-white text-gray-800
+           focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary
+           transition-all duration-200 text-sm;
+  }
+  .badge-theory {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-orange-100 text-orange-700;
+  }
+  .badge-lab {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-green-100 text-green-700;
+  }
+  .badge-bca {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-blue-100 text-blue-700;
+  }
+  .badge-mca {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-semibold bg-purple-100 text-purple-700;
+  }
+  /* DPT Orange Header */
+  .dpt-header {
+    @apply bg-primary text-white;
+  }
+  /* DPT Dark Navbar */
+  .dpt-nav {
+    background: #222222;
+  }
+  .dpt-nav a, .dpt-nav button {
+    @apply text-gray-300 hover:text-white text-sm transition-colors;
+  }
+  .dpt-nav .active {
+    @apply text-primary font-semibold;
+  }
+  /* Section header (orange bar) */
+  .section-header {
+    @apply bg-primary text-white px-4 py-2 text-sm font-semibold rounded-t;
+  }
+  /* Table orange header */
+  .table-orange thead tr {
+    background: #e07020;
+  }
+  .table-orange thead th {
+    @apply text-white text-xs font-semibold px-4 py-3 text-left;
+  }
+  .table-orange tbody tr:nth-child(even) {
+    @apply bg-gray-50;
+  }
+  .table-orange tbody td {
+    @apply px-4 py-2.5 text-sm text-gray-700 border-b border-gray-100;
+  }
+}
