@@ -8,10 +8,11 @@ Welcome to the **DPT_PORTAL (Departmental Timetable Portal)**, a comprehensive r
 2. [Architecture Diagram](#2-architecture-diagram)
 3. [Workflow DIAGRAM](#3-workflow-diagram)
 4. [Features](#4-features)
-5. [Tech Stack](#5-tech-stack)
-6. [Folder Structure](#6-folder-structure)
-7. [Future Improvements](#7-future-improvements)
-8. [How to Run](#8-how-to-run)
+5. [Screenshots](#5-screenshots)
+6. [Tech Stack](#6-tech-stack)
+7. [Folder Structure](#7-folder-structure)
+8. [Future Improvements](#8-future-improvements)
+9. [How to Run](#9-how-to-run)
 
 ---
 
@@ -59,7 +60,32 @@ sequenceDiagram
 * **Instant Report Generation**
   Instantly generate schedule views. In the future, this includes exporting to PDF or automated email reports for students and faculty.
 
-## 5. Tech Stack
+## 5. Screenshots
+
+### 🔐 Login Page
+![Login Page](docs/login_page.png)
+
+### 🎓 Student Dashboard
+![Student Dashboard](docs/student_dashboard.png)
+
+### 📅 Weekly Timetable View
+![Weekly Timetable](docs/weekly_timetable.png)
+
+### 🛡️ Admin Dashboard
+![Admin Dashboard](docs/admin_dashboard.png)
+
+### 📤 CSV Upload
+![CSV Upload](docs/csv_upload.png)
+
+### 👨‍🏫 Faculty Management
+![Faculty Management](docs/faculty_management.png)
+
+### 📋 Faculty Schedule-Change Requests
+![Faculty Requests](docs/faculty_requests.png)
+
+---
+
+## 6. Tech Stack
 
 * **Frontend**
   - React.js
@@ -72,7 +98,7 @@ sequenceDiagram
   - MySQL 8.0
   - Docker & Docker Compose
 
-## 6. Folder Structure
+## 7. Folder Structure
 
 ```text
 dpt-portal/
@@ -96,13 +122,13 @@ dpt-portal/
 └── sample_schedule.csv       ← Sample CSV for admin upload
 ```
 
-## 7. Future Improvements
+## 8. Future Improvements
 - AI-based automatic timetable generation to eliminate manual conflict checking.
 - Push notifications or SMS alerts for immediate timetable changes.
 - Integration with the university's main ERP for automatic synchronization of enrolled students and faculty leaves.
 - Comprehensive unit and integration test coverage.
 
-## 8. How to Run
+## 9. How to Run
 
 ### Quick Start (Docker — Recommended)
 Ensure you have [Docker Desktop](https://www.docker.com/products/docker-desktop/) installed.
