@@ -19,21 +19,34 @@ Welcome to the **DPT_PORTAL (Departmental Timetable Portal)**, a comprehensive r
 DPT_PORTAL is designed for Students, Faculty, and Administrators to streamline the creation, distribution, and viewing of timetables. It provides an elegant interface for managing classrooms, faculty schedules, and student routines while ensuring data is securely handled via role-based access control.
 
 ## 2. Architecture Diagram
-*(You can embed an architecture diagram here, for example: `![Architecture Diagram](/docs/architecture.png)`)*
-
-The application follows a standard modern client-server architecture:
-- **Client (React)** handles routing, UI state, and API requests.
-- **API Gateway (Nginx/Spring)** handles reverse proxying and security filtering.
-- **Backend (Spring Boot)** processes business logic and interacts with the database.
-- **Database (MySQL)** stores persistent schedule and user data.
+```mermaid
+graph TD
+    Client[React Client] -->|HTTP REST| Proxy[Nginx / API Gateway]
+    Proxy -->|Proxied Requests| Backend[Spring Boot Backend]
+    Backend -->|JDBC / JPA| DB[(MySQL Database)]
+    Backend -->|JWT Auth| Auth[Spring Security]
+```
 
 ## 3. Workflow DIAGRAM
-*(You can embed a workflow diagram here, for example: `![Workflow Diagram](/docs/workflow.png)`)*
+```mermaid
+sequenceDiagram
+    participant Admin
+    participant Frontend
+    participant Backend
+    participant DB as MySQL Database
+    participant Users as Faculty/Students
 
-1. **Input Stage:** Admin uploads the department timetable via CSV or creates individual slots.
-2. **Processing Stage:** Backend validates the timetable and stores it in the database.
-3. **Retrieval Stage:** Faculty and Students request their personalized views from the dashboard.
-4. **Output Stage:** The React frontend renders the timetable elegantly based on the user's role.
+    Admin->>Frontend: Uploads CSV / Creates Slots
+    Frontend->>Backend: POST /api/schedules
+    Backend->>Backend: Validate Data
+    Backend->>DB: Save to Database
+    Users->>Frontend: Logs in & requests view
+    Frontend->>Backend: GET /api/schedules
+    Backend->>DB: Fetch schedules
+    DB-->>Backend: Return data
+    Backend-->>Frontend: Return formatted JSON
+    Frontend-->>Users: Display elegant UI
+```
 
 ## 4. Features
 
