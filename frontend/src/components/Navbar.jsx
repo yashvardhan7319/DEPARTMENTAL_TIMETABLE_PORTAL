@@ -19,6 +19,7 @@ const NAV_ADMIN = [
   { id: 'upload',   label: 'Upload CSV' },
   { id: 'users',    label: 'User Management' },
   { id: 'requests', label: 'Faculty Requests', badge: true },
+  { id: 'notices',  label: 'Notices' },
 ];
 
 function navItems(role) {

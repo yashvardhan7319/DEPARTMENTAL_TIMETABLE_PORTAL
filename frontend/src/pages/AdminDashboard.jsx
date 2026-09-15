@@ -3,7 +3,9 @@ import Navbar from '../components/Navbar';
 import TimetableView from '../components/TimetableView';
 import UploadZone from '../components/UploadZone';
 import { getSchedules, uploadCsv, createSchedule, updateSchedule, deleteSchedule,
-         getStudents, getFacultyList, deleteUser, createFaculty } from '../services/api';
+         getStudents, getFacultyList, deleteUser, createFaculty,
+         getAllRequests, approveRequest, rejectRequest,
+         getNotices, createNotice, deleteNotice } from '../services/api';
 import { downloadTimetablePdf } from '../services/pdfGenerator';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -15,16 +17,6 @@ const PROGRAMS   = ['BCA','MCA'];
 const EMPTY_FORM = { program:'BCA', day:'Monday', timeSlot:'9:00-10:00 AM', subject:'', facultyId:'', facultyName:'', room:'' };
 const EMPTY_FAC  = { username:'', password:'', fullName:'', program:'BCA' };
 const TODAY_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-
-// Faculty request storage key
-const REQ_KEY = 'dpt_faculty_requests';
-
-function loadRequests() {
-  try { return JSON.parse(localStorage.getItem(REQ_KEY) || '[]'); } catch { return []; }
-}
-function saveRequests(reqs) {
-  localStorage.setItem(REQ_KEY, JSON.stringify(reqs));
-}
 
 export default function AdminDashboard() {
   const { user } = useAuth();
@@ -50,8 +42,14 @@ export default function AdminDashboard() {
   const [facLoading,  setFacLoading]  = useState(false);
 
   // faculty requests
-  const [requests,    setRequests]   = useState(loadRequests);
-  const [reqAction,   setReqAction]  = useState(null); // { req, newDay, newSlot }
+  const [requests,    setRequests]    = useState([]);
+  const [reqAction,   setReqAction]   = useState(null); // { req, newDay, newSlot }
+
+  // notices
+  const [notices,        setNotices]        = useState([]);
+  const [showNoticeForm, setShowNoticeForm] = useState(false);
+  const [noticeForm,     setNoticeForm]     = useState({ title: '', content: '' });
+  const [noticeLoading,  setNoticeLoading]  = useState(false);
 
   const todayName = TODAY_DAYS[new Date().getDay()];
 
@@ -69,18 +67,29 @@ export default function AdminDashboard() {
     } catch { toast.error('Failed to load users'); }
   }, []);
 
-  useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
-  useEffect(() => { if (activeTab === 'users') fetchUsers(); }, [activeTab, fetchUsers]);
-  useEffect(() => {
-    const onStorage = () => setRequests(loadRequests());
-    window.addEventListener('storage', onStorage);
-    return () => window.removeEventListener('storage', onStorage);
+  const fetchRequests = useCallback(async () => {
+    try {
+      const r = await getAllRequests();
+      setRequests(r.data || []);
+    } catch {
+      // request fetch error handled silently
+    }
   }, []);
 
-  // Reload requests each time requests tab is opened
-  useEffect(() => {
-    if (activeTab === 'requests') setRequests(loadRequests());
-  }, [activeTab]);
+  const fetchNotices = useCallback(async () => {
+    try {
+      const r = await getNotices();
+      setNotices(r.data || []);
+    } catch {
+      // notice fetch error handled silently
+    }
+  }, []);
+
+  useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  useEffect(() => { if (activeTab === 'users') fetchUsers(); }, [activeTab, fetchUsers]);
+  useEffect(() => { if (activeTab === 'requests') fetchRequests(); }, [activeTab, fetchRequests]);
+  useEffect(() => { if (activeTab === 'notices') fetchNotices(); }, [activeTab, fetchNotices]);
 
   const handleUpload = async (file) => {
     setUploading(true);
@@ -143,39 +152,60 @@ export default function AdminDashboard() {
 
   // Approve / reject faculty request
   const openReqAction = (req) => {
-    setReqAction({ req, newDay: req.currentDay, newSlot: req.currentSlot });
+    setReqAction({ req, newDay: req.requestedDay || req.currentDay, newSlot: req.requestedSlot || req.currentSlot });
   };
 
   const applyRequest = async () => {
     if (!reqAction) return;
     const { req, newDay, newSlot } = reqAction;
-    // find schedule entry by matching subject + facultyId + currentDay + currentSlot
-    const entry = schedules.find(s =>
-      s.subject === req.subject &&
-      s.facultyId === req.facultyId &&
-      s.day === req.currentDay &&
-      s.timeSlot === req.currentSlot
-    );
-    if (!entry) { toast.error('Could not find matching schedule entry.'); return; }
     try {
-      await updateSchedule(entry.id, { ...entry, day: newDay, timeSlot: newSlot });
-      toast.success('Schedule updated per faculty request!');
-      // mark request resolved
-      const updated = requests.map(r =>
-        r.id === req.id ? { ...r, status: 'approved', resolvedDay: newDay, resolvedSlot: newSlot } : r
-      );
-      saveRequests(updated);
-      setRequests(updated);
+      await approveRequest(req.id, { resolvedDay: newDay, resolvedSlot: newSlot });
+      toast.success('Schedule updated per faculty request in database!');
       setReqAction(null);
-      fetchSchedules();
-    } catch { toast.error('Update failed'); }
+      await Promise.all([fetchRequests(), fetchSchedules()]);
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Failed to approve request');
+    }
   };
 
-  const rejectRequest = (reqId) => {
-    const updated = requests.map(r => r.id === reqId ? { ...r, status: 'rejected' } : r);
-    saveRequests(updated);
-    setRequests(updated);
-    toast.info('Request rejected');
+  const handleRejectRequest = async (reqId) => {
+    try {
+      await rejectRequest(reqId);
+      toast.info('Request rejected');
+      await fetchRequests();
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Failed to reject request');
+    }
+  };
+
+  // Notice operations
+  const handleCreateNotice = async (e) => {
+    e.preventDefault();
+    if (!noticeForm.title.trim()) { toast.error('Notice title is required'); return; }
+    if (!noticeForm.content.trim()) { toast.error('Notice content is required'); return; }
+    setNoticeLoading(true);
+    try {
+      await createNotice(noticeForm);
+      toast.success('Notice published to database!');
+      setNoticeForm({ title: '', content: '' });
+      setShowNoticeForm(false);
+      fetchNotices();
+    } catch (e) {
+      toast.error(e.response?.data?.error || 'Failed to publish notice');
+    } finally {
+      setNoticeLoading(false);
+    }
+  };
+
+  const handleDeleteNotice = async (id) => {
+    if (!window.confirm('Delete this notice?')) return;
+    try {
+      await deleteNotice(id);
+      toast.success('Notice deleted');
+      fetchNotices();
+    } catch {
+      toast.error('Failed to delete notice');
+    }
   };
 
   const pendingCount = requests.filter(r => r.status === 'pending').length;
@@ -537,7 +567,7 @@ export default function AdminDashboard() {
                             <strong>Requested:</strong> {req.requestedDay}, {req.requestedSlot}
                           </div>
                           {req.reason && <div className="text-xs text-gray-500 italic">"{req.reason}"</div>}
-                          <div className="text-[10px] text-gray-400 mt-1">{new Date(req.timestamp).toLocaleString()}</div>
+                          <div className="text-[10px] text-gray-400 mt-1">{new Date(req.createdAt || req.timestamp || Date.now()).toLocaleString()}</div>
                           {req.status === 'approved' && (
                             <div className="text-xs text-green-700 mt-1 font-medium">✅ Applied: {req.resolvedDay}, {req.resolvedSlot}</div>
                           )}
@@ -565,13 +595,74 @@ export default function AdminDashboard() {
                               <>
                                 <button onClick={() => openReqAction(req)}
                                   className="btn-primary text-xs py-1.5">✏️ Review &amp; Apply</button>
-                                <button onClick={() => rejectRequest(req.id)}
+                                <button onClick={() => handleRejectRequest(req.id)}
                                   className="btn-danger text-xs py-1.5">✕ Reject</button>
                               </>
                             )}
                           </div>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* NOTICES */}
+        {activeTab === 'notices' && (
+          <div className="card !p-0 overflow-hidden">
+            <div className="section-header flex items-center justify-between">
+              <span>📢 Department Notices ({notices.length})</span>
+              <button onClick={() => setShowNoticeForm(true)} className="text-xs bg-white text-primary px-3 py-1 rounded font-semibold">
+                + Post Notice
+              </button>
+            </div>
+            <div className="p-4 space-y-4">
+              {showNoticeForm && (
+                <form onSubmit={handleCreateNotice} className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-3">
+                  <div className="font-semibold text-sm text-gray-800">Post New Notice</div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 block mb-1">Title</label>
+                    <input className="input-field" placeholder="e.g. Schedule Update for Mid-Term"
+                      value={noticeForm.title} onChange={e => setNoticeForm(f => ({ ...f, title: e.target.value }))} />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-600 block mb-1">Notice Content</label>
+                    <textarea className="input-field" rows={4} placeholder="Type announcement details here..."
+                      value={noticeForm.content} onChange={e => setNoticeForm(f => ({ ...f, content: e.target.value }))} />
+                  </div>
+                  <div className="flex gap-2 justify-end">
+                    <button type="button" onClick={() => setShowNoticeForm(false)} className="btn-secondary text-xs">Cancel</button>
+                    <button type="submit" disabled={noticeLoading} className="btn-primary text-xs">
+                      {noticeLoading ? 'Publishing...' : '📢 Publish Notice'}
+                    </button>
+                  </div>
+                </form>
+              )}
+
+              {notices.length === 0 ? (
+                <div className="text-center py-12 text-gray-400">
+                  <div className="text-4xl mb-3">📢</div>
+                  <div>No notices published yet.</div>
+                  <div className="text-xs mt-1">Notices published here are visible to all students and faculty.</div>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {notices.map(n => (
+                    <div key={n.id} className="border border-gray-200 bg-white rounded-lg p-4 flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-1">
+                          <span className="font-bold text-gray-800 text-sm">{n.title}</span>
+                          <span className="text-[11px] text-gray-400">{new Date(n.postedAt).toLocaleString()}</span>
+                        </div>
+                        <p className="text-gray-600 text-xs whitespace-pre-wrap leading-relaxed">{n.content}</p>
+                        <div className="text-[10px] text-primary font-semibold mt-2">Posted by: {n.postedBy}</div>
+                      </div>
+                      <button onClick={() => handleDeleteNotice(n.id)} className="btn-danger text-xs py-1 px-2.5">
+                        🗑 Delete
+                      </button>
                     </div>
                   ))}
                 </div>

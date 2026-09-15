@@ -36,4 +36,17 @@ export const createFaculty   = (data) => API.post('/admin/faculty', data);
 export const updateUser      = (id, data) => API.put(`/admin/users/${id}`, data);
 export const deleteUser      = (id) => API.delete(`/admin/users/${id}`);
 
+// Requests (Faculty / Admin)
+export const getMyRequests          = () => API.get('/requests/my');
+export const createFacultyRequest   = (data) => API.post('/requests', data);
+export const getAllRequests         = () => API.get('/requests');
+export const getPendingRequestCount = () => API.get('/requests/pending-count');
+export const approveRequest         = (id, data) => API.put(`/requests/${id}/approve`, data || {});
+export const rejectRequest          = (id) => API.put(`/requests/${id}/reject`);
+
+// Notices (Admin / Faculty / Student)
+export const getNotices             = () => API.get('/notices');
+export const createNotice           = (data) => API.post('/notices', data);
+export const deleteNotice           = (id) => API.delete(`/notices/${id}`);
+
 export default API;

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import TimetableView from '../components/TimetableView';
-import { getSchedules } from '../services/api';
+import { getSchedules, getNotices } from '../services/api';
 import { downloadTimetablePdf } from '../services/pdfGenerator';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
@@ -12,6 +12,7 @@ export default function StudentDashboard() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState('home');
   const [schedules, setSchedules] = useState([]);
+  const [notices,   setNotices]   = useState([]);
   const [loading,   setLoading]   = useState(false);
 
   const program   = user?.program ?? 'BCA';
@@ -24,7 +25,17 @@ export default function StudentDashboard() {
     finally { setLoading(false); }
   }, [program]);
 
+  const fetchNotices = useCallback(async () => {
+    try {
+      const r = await getNotices();
+      setNotices(r.data || []);
+    } catch {
+      // ignore
+    }
+  }, []);
+
   useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
+  useEffect(() => { if (activeTab === 'notice') fetchNotices(); }, [activeTab, fetchNotices]);
 
   const todaySchedule = schedules
     .filter(s => s.day === todayName)
@@ -105,10 +116,33 @@ export default function StudentDashboard() {
 
         {/* NOTICE */}
         {activeTab === 'notice' && (
-          <div className="card text-center py-16">
-            <div className="text-5xl mb-4">📢</div>
-            <div className="text-lg font-bold text-gray-700 mb-2">Notice Board</div>
-            <div className="text-gray-400 text-sm">No notices at this time. Check back later.</div>
+          <div className="space-y-4">
+            <div className="card !p-0 overflow-hidden">
+              <div className="section-header flex items-center justify-between">
+                <span>📢 Department Notice Board</span>
+                <span className="text-xs text-white/80">{notices.length} Notice(s)</span>
+              </div>
+              <div className="p-4 space-y-3">
+                {notices.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <div className="text-4xl mb-2">📢</div>
+                    <div className="text-sm font-semibold text-gray-600">No notices at this time.</div>
+                    <div className="text-xs text-gray-400 mt-1">Check back later for department updates.</div>
+                  </div>
+                ) : (
+                  notices.map(n => (
+                    <div key={n.id} className="border border-orange-100 bg-orange-50/40 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="font-bold text-gray-800 text-sm">{n.title}</div>
+                        <div className="text-[11px] text-gray-400">{new Date(n.postedAt).toLocaleString()}</div>
+                      </div>
+                      <p className="text-gray-600 text-xs whitespace-pre-wrap leading-relaxed">{n.content}</p>
+                      <div className="text-[10px] text-primary font-semibold mt-2">Posted by: {n.postedBy}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
       </main>

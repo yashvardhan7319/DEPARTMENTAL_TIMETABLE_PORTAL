@@ -59,8 +59,13 @@ public class ScheduleService {
             }
         }
 
-        // Clear old + bulk insert
-        scheduleRepo.deleteAll();
+        // Clear schedules for programs present in the CSV + bulk insert
+        java.util.Set<User.Program> programs = parsed.stream()
+                .map(Schedule::getProgram)
+                .collect(Collectors.toSet());
+        for (User.Program prog : programs) {
+            scheduleRepo.deleteAll(scheduleRepo.findByProgram(prog));
+        }
         scheduleRepo.saveAll(parsed);
         return scheduleRepo.findAll().stream().map(this::toDto).collect(Collectors.toList());
     }

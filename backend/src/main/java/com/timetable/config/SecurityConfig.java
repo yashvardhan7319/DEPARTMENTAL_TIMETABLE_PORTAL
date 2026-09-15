@@ -61,6 +61,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/auth/**").permitAll()
                 .requestMatchers("/api/admin/**").hasRole("ADMIN")
                 .requestMatchers("/api/schedules/**").hasAnyRole("ADMIN","FACULTY","STUDENT")
+                .requestMatchers("/api/requests/**").hasAnyRole("ADMIN","FACULTY")
+                .requestMatchers("/api/notices/**").hasAnyRole("ADMIN","FACULTY","STUDENT")
                 .anyRequest().authenticated()
             )
             .authenticationProvider(authProvider())

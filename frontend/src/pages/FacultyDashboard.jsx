@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Navbar from '../components/Navbar';
 import TimetableView from '../components/TimetableView';
-import { getFacultySchedule } from '../services/api';
+import { getFacultySchedule, getMyRequests, createFacultyRequest, getNotices } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { toast } from 'react-toastify';
 
@@ -9,16 +9,6 @@ const TODAY_DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday',
 const DAYS  = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 const SLOTS = ['9:00-10:00 AM','10:00-11:00 AM','11:00 AM-12:00 PM',
                '12:00-1:00 PM','2:00-3:00 PM','3:00-4:00 PM','4:00-5:00 PM'];
-const REQ_KEY = 'dpt_faculty_requests';
-
-function loadRequests() {
-  try { return JSON.parse(localStorage.getItem(REQ_KEY) || '[]'); } catch { return []; }
-}
-function saveRequests(reqs) {
-  localStorage.setItem(REQ_KEY, JSON.stringify(reqs));
-  // trigger storage event for admin dashboard
-  window.dispatchEvent(new Event('storage'));
-}
 
 export default function FacultyDashboard() {
   const { user }  = useAuth();
@@ -28,11 +18,13 @@ export default function FacultyDashboard() {
 
   // request change modal
   const [showReqModal, setShowReqModal] = useState(false);
+  const [reqSubmitting, setReqSubmitting] = useState(false);
   const [reqForm, setReqForm] = useState({
     subject: '', currentDay: '', currentSlot: '',
     requestedDay: 'Monday', requestedSlot: '9:00-10:00 AM', reason: ''
   });
   const [myRequests, setMyRequests] = useState([]);
+  const [notices, setNotices] = useState([]);
 
   const todayName = TODAY_DAYS[new Date().getDay()];
 
@@ -43,13 +35,27 @@ export default function FacultyDashboard() {
     finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
+  const fetchRequests = useCallback(async () => {
+    try {
+      const r = await getMyRequests();
+      setMyRequests(r.data || []);
+    } catch {
+      // request fetch error handled silently
+    }
+  }, []);
 
-  useEffect(() => {
-    // Load only this faculty's requests
-    const all = loadRequests();
-    setMyRequests(all.filter(r => r.facultyId === user?.username));
-  }, [activeTab, user?.username]);
+  const fetchNotices = useCallback(async () => {
+    try {
+      const r = await getNotices();
+      setNotices(r.data || []);
+    } catch {
+      // notice fetch error handled silently
+    }
+  }, []);
+
+  useEffect(() => { fetchSchedules(); }, [fetchSchedules]);
+  useEffect(() => { fetchRequests(); }, [fetchRequests]);
+  useEffect(() => { if (activeTab === 'notice') fetchNotices(); }, [activeTab, fetchNotices]);
 
   const todaySchedule = schedules
     .filter(s => s.day === todayName)
@@ -67,29 +73,29 @@ export default function FacultyDashboard() {
     setShowReqModal(true);
   };
 
-  const submitRequest = () => {
+  const submitRequest = async () => {
     if (!reqForm.subject) { toast.error('Select a class entry first.'); return; }
     if (reqForm.requestedDay === reqForm.currentDay && reqForm.requestedSlot === reqForm.currentSlot) {
       toast.error('Please choose a different day or time slot.'); return;
     }
-    const newReq = {
-      id: Date.now().toString(),
-      facultyId:    user?.username,
-      facultyName:  user?.fullName,
-      subject:      reqForm.subject,
-      currentDay:   reqForm.currentDay,
-      currentSlot:  reqForm.currentSlot,
-      requestedDay: reqForm.requestedDay,
-      requestedSlot:reqForm.requestedSlot,
-      reason:       reqForm.reason,
-      status:       'pending',
-      timestamp:    new Date().toISOString()
-    };
-    const all = loadRequests();
-    saveRequests([...all, newReq]);
-    setMyRequests(prev => [...prev, newReq]);
-    setShowReqModal(false);
-    toast.success('Request submitted to admin!');
+    setReqSubmitting(true);
+    try {
+      await createFacultyRequest({
+        subject:      reqForm.subject,
+        currentDay:   reqForm.currentDay,
+        currentSlot:  reqForm.currentSlot,
+        requestedDay: reqForm.requestedDay,
+        requestedSlot:reqForm.requestedSlot,
+        reason:       reqForm.reason
+      });
+      await fetchRequests();
+      setShowReqModal(false);
+      toast.success('Request submitted to database!');
+    } catch (err) {
+      toast.error(err.response?.data?.error || 'Failed to submit request');
+    } finally {
+      setReqSubmitting(false);
+    }
   };
 
   const setRF = (k) => (e) => setReqForm(f => ({ ...f, [k]: e.target.value }));
@@ -235,7 +241,7 @@ export default function FacultyDashboard() {
                       </div>
                       {req.reason && <div className="text-gray-500 italic mt-1">"{req.reason}"</div>}
                       {req.status==='approved' && <div className="text-green-700 font-medium mt-1">✅ Applied: {req.resolvedDay}, {req.resolvedSlot}</div>}
-                      <div className="text-gray-400 mt-1">{new Date(req.timestamp).toLocaleString()}</div>
+                      <div className="text-gray-400 mt-1">{new Date(req.createdAt || req.timestamp || Date.now()).toLocaleString()}</div>
                     </div>
                   ))}
                 </div>
@@ -245,10 +251,33 @@ export default function FacultyDashboard() {
         )}
 
         {activeTab === 'notice' && (
-          <div className="card text-center py-16">
-            <div className="text-5xl mb-4">📢</div>
-            <div className="text-lg font-bold text-gray-700 mb-2">Notice Board</div>
-            <div className="text-gray-400 text-sm">No notices at this time.</div>
+          <div className="space-y-4">
+            <div className="card !p-0 overflow-hidden">
+              <div className="section-header flex items-center justify-between">
+                <span>📢 Notice Board</span>
+                <span className="text-xs text-white/80">{notices.length} Notice(s)</span>
+              </div>
+              <div className="p-4 space-y-3">
+                {notices.length === 0 ? (
+                  <div className="text-center py-12 text-gray-400">
+                    <div className="text-4xl mb-2">📢</div>
+                    <div className="text-sm font-semibold text-gray-600">No notices at this time.</div>
+                    <div className="text-xs text-gray-400 mt-1">Check back later for department updates.</div>
+                  </div>
+                ) : (
+                  notices.map(n => (
+                    <div key={n.id} className="border border-orange-100 bg-orange-50/40 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="font-bold text-gray-800 text-sm">{n.title}</div>
+                        <div className="text-[11px] text-gray-400">{new Date(n.postedAt).toLocaleString()}</div>
+                      </div>
+                      <p className="text-gray-600 text-xs whitespace-pre-wrap leading-relaxed">{n.content}</p>
+                      <div className="text-[10px] text-primary font-semibold mt-2">Posted by: {n.postedBy}</div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
           </div>
         )}
       </main>
